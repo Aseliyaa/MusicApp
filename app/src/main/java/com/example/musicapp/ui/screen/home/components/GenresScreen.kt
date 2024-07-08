@@ -27,7 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.musicapp.data.model.Genre
+import com.example.musicapp.ui.screen.home.ErrorScreen
 import com.example.musicapp.ui.screen.home.HomeViewModel
+import com.example.musicapp.ui.screen.home.LoadingScreen
 import com.example.musicapp.ui.viewmodel.AppViewModelProvider
 
 @Composable
@@ -36,8 +38,6 @@ fun GenresGrid(
     navHostController: NavHostController,
     viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AppViewModelProvider.Factory)
 ) {
-
-
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -52,6 +52,18 @@ fun GenresGrid(
     }
 }
 
+@Composable
+fun GenresScreen(
+    navHostController: NavHostController,
+    viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AppViewModelProvider.Factory)
+){
+    when (val genresUiState = viewModel.genresUiState) {
+        is HomeViewModel.UiState.Success ->
+            GenresGrid(genres = genresUiState.data.data ,navHostController = navHostController)
+        is HomeViewModel.UiState.Loading -> LoadingScreen(modifier = Modifier.fillMaxSize())
+        is HomeViewModel.UiState.Error -> ErrorScreen(modifier = Modifier.fillMaxSize())
+    }
+}
 
 @Composable
 fun GenreItem(

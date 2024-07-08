@@ -1,16 +1,22 @@
 package com.example.musicapp.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 
 
 import androidx.navigation.compose.rememberNavController
-import com.example.musicapp.ui.screen.home.ArtistsByGenreScreen
-import com.example.musicapp.ui.screen.home.HomeScreen
-import com.example.musicapp.ui.screen.home.components.ArtistsGrid
-import com.example.musicapp.ui.screen.home.components.CommonScreenComponents
+import com.example.musicapp.ui.screen.home.components.ArtistsByGenreScreen
+import com.example.musicapp.ui.screen.home.HomeViewModel
+
+import com.example.musicapp.ui.screen.home.components.ArtistsScreen
+import com.example.musicapp.ui.screen.home.CommonScreenComponents
+import com.example.musicapp.ui.screen.home.components.GenresScreen
+import com.example.musicapp.ui.screen.home.components.TracksScreen
 import com.example.musicapp.ui.screen.welcome.WelcomeScreen
+import com.example.musicapp.ui.viewmodel.AppViewModelProvider
 
 enum class AppScreen {
     WELCOME,
@@ -18,22 +24,50 @@ enum class AppScreen {
 }
 
 @Composable
-fun ScreenNavigation() {
+fun ScreenNavigation(
+    viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
+) {
     val navController = rememberNavController()
+    val selectedItemIndex = viewModel.selectedItemIndex.collectAsState()
 
     NavHost(navController = navController, startDestination = AppScreen.WELCOME.name) {
-        composable(AppScreen.WELCOME.name){
+        composable(AppScreen.WELCOME.name) {
             WelcomeScreen(navController)
         }
-        composable(AppScreen.HOME.name){
-            HomeScreen(navController)
+        composable(AppScreen.HOME.name) {
+            CommonScreenComponents(
+                selectedItemIndex,
+                navHostController = navController
+            ) { GenresScreen(navHostController = navController) }
         }
-        composable("artists/{genreId}"){ backStackEntry ->
-            val genreId =  backStackEntry.arguments?.getString("genreId")
-//            ArtistsByGenreScreen(navController, genreId)
-            CommonScreenComponents(navHostController = navController, content = {
-                ArtistsByGenreScreen(navController, genreId)
-            })
+        composable("artists/{genreId}") { backStackEntry ->
+            val genreId = backStackEntry.arguments?.getString("genreId")
+            CommonScreenComponents(
+                selectedItemIndex,
+                navHostController = navController
+            ) { ArtistsByGenreScreen(navController, genreId) }
+        }
+        composable("home/{menuIndex}") { backStackEntry ->
+            val menuIndex = backStackEntry.arguments?.getString("menuIndex")?.toInt()
+            if (menuIndex != null) {
+                viewModel.selectItem(menuIndex)
+            }
+            when (menuIndex) {
+                0 -> CommonScreenComponents(
+                    selectedItemIndex,
+                    navHostController = navController,
+                ) { GenresScreen(navHostController = navController) }
+
+                1 -> CommonScreenComponents(
+                    selectedItemIndex,
+                    navHostController = navController
+                ) { ArtistsScreen(navHostController = navController) }
+
+                2 -> CommonScreenComponents(
+                    selectedItemIndex,
+                    navHostController = navController
+                ) { TracksScreen(navHostController = navController) }
+            }
         }
     }
 }

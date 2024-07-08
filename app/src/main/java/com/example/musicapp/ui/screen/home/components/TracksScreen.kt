@@ -24,7 +24,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.musicapp.data.model.Track
+import com.example.musicapp.ui.screen.home.ErrorScreen
 import com.example.musicapp.ui.screen.home.HomeViewModel
+import com.example.musicapp.ui.screen.home.LoadingScreen
 import com.example.musicapp.ui.viewmodel.AppViewModelProvider
 
 
@@ -43,6 +45,19 @@ fun TracksGrid(
         items(tracks.size) { trackIndex ->
             TrackItem(tracks[trackIndex], Modifier)
         }
+    }
+}
+
+@Composable
+fun TracksScreen(
+    navHostController: NavHostController,
+    viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AppViewModelProvider.Factory)
+){
+    when (val tracksUiState = viewModel.tracksUiState) {
+        is HomeViewModel.UiState.Success ->
+            TracksGrid(tracks = tracksUiState.data.data ,navHostController = navHostController)
+        is HomeViewModel.UiState.Loading -> LoadingScreen(modifier = Modifier.fillMaxSize())
+        is HomeViewModel.UiState.Error -> ErrorScreen(modifier = Modifier.fillMaxSize())
     }
 }
 

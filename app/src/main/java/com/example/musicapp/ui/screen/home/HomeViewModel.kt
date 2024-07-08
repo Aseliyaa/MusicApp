@@ -139,12 +139,16 @@ class HomeViewModel(
                     }
                 }.awaitAll().flatten().toSet()
 
-                artistsRepository.deleteAll()
-                artistsRepository.insertAll(artistsFromApi.toList())
+                artistUiState = if (artistsFromApi.isNotEmpty()) {
+                    artistsRepository.deleteAll()
+                    artistsRepository.insertAll(artistsFromApi.toList())
 
-                artistUiState =
                     UiState.Success(Artists(artistsRepository.getAllItemsStream().first()))
-            } catch (e: IOException) {
+                } else {
+                    UiState.Error()
+                }
+
+            } catch (e: Exception) {
                 artistUiState = UiState.Error()
             }
         }
@@ -153,26 +157,39 @@ class HomeViewModel(
     fun getArtistByGenreId(genreIdStr: String?) {
         viewModelScope.launch {
             val genreId = genreIdStr?.toInt()
-            try {
-                artistByGenreIdUiState = if (genreId != null) {
-                    val artistsByGenreIdDeferred = async {
-                        try {
-                            DeezerApi.retrofitService.getArtists(genreId).data
-                        } catch (e: IOException) {
-                            emptyList()
-                        }
-                    }
-                    val artistsByGenreId = artistsByGenreIdDeferred.await()
-                    UiState.Success(Artists(artistsByGenreId))
-
-                } else {
+            if (genreId != null) {
+                artistByGenreIdUiState = try {
+                    val artistsByGenreId = DeezerApi.retrofitService.getArtists(genreId)
+                    UiState.Success(artistsByGenreId)
+                } catch (e: IOException) {
                     UiState.Error()
                 }
-            } catch (e: Exception) {
-                artistByGenreIdUiState = UiState.Error()
             }
         }
     }
+//    fun getArtistByGenreId(genreIdStr: String?) {
+//        viewModelScope.launch {
+//            val genreId = genreIdStr?.toInt()
+//            try {
+//                artistByGenreIdUiState = if (genreId != null) {
+//                    val artistsByGenreIdDeferred = async {
+//                        try {
+//                            DeezerApi.retrofitService.getArtists(genreId).data
+//                        } catch (e: IOException) {
+//                            emptyList()
+//                        }
+//                    }
+//                    val artistsByGenreId = artistsByGenreIdDeferred.await()
+//                    UiState.Success(Artists(artistsByGenreId))
+//
+//                } else {
+//                    UiState.Error()
+//                }
+//            } catch (e: Exception) {
+//                artistByGenreIdUiState = UiState.Error()
+//            }
+//        }
+//    }
 }
 
 
