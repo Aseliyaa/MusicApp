@@ -7,7 +7,7 @@ import com.google.gson.annotations.SerializedName
 @Entity(tableName = "artist")
 data class Artist(
     @PrimaryKey
-    @SerializedName("id") var id: Int? = null,
+    @SerializedName("id") var id: String,
     @SerializedName("name") var name: String? = null,
     @SerializedName("picture") var picture: String? = null,
     @SerializedName("picture_small") var pictureSmall: String? = null,

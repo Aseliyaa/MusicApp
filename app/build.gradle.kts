@@ -80,12 +80,6 @@ dependencies {
 //---------------------------Navigation---------------------------------------->
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-//---------------------------Spotify---------------------------------------->
-    implementation("com.spotify.android:auth:1.2.3")
-    implementation("com.google.code.gson:gson:2.8.9")
-    implementation("androidx.browser:browser:1.8.0")
-
-
 //---------------------------Retrofit---------------------------------------->
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.6.2")
@@ -102,4 +96,10 @@ dependencies {
     implementation("androidx.room:room-runtime:2.5.1")
     kapt("androidx.room:room-compiler:2.5.1")
     implementation("androidx.room:room-ktx:2.5.1")
+
+//---------------------------exoPlayer---------------------------------------->
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.33.2-alpha")
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
 }

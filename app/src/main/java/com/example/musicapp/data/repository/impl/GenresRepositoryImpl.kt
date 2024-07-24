@@ -10,7 +10,7 @@ class GenresRepositoryImpl(private val genreDao: GenreDao) : GenresRepository {
         return genreDao.getAllGenres()
     }
 
-    override fun getItemStream(id: Int): Flow<Genre?> {
+    override fun getItemStream(id: String): Flow<Genre?> {
         return genreDao.getGenre(id)
     }
 

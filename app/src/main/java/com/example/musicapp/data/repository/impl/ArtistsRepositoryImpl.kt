@@ -10,7 +10,7 @@ class ArtistsRepositoryImpl(private val artistDao: ArtistDao): ArtistsRepository
         return artistDao.getAllArtists()
     }
 
-    override fun getItemStream(id: Int): Flow<Artist?> {
+    override fun getItemStream(id: String): Flow<Artist?> {
         return artistDao.getArtist(id)
     }
 

@@ -3,7 +3,7 @@ package com.example.musicapp.data.model
 import com.google.gson.annotations.SerializedName
 
 data class Album(
-    @SerializedName("id") var id: String? = null,
+    @SerializedName("id") var id: String,
     @SerializedName("title") var title: String? = null,
     @SerializedName("cover") var cover: String? = null,
     @SerializedName("cover_small") var coverSmall: String? = null,

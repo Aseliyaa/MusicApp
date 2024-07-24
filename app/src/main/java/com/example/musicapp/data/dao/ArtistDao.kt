@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ArtistDao: ItemDao<Artist> {
     @Query("SELECT * FROM artist WHERE id = :id")
-    fun getArtist(id: Int): Flow<Artist>
+    fun getArtist(id: String): Flow<Artist>
 
     @Query("SELECT * FROM artist")
     fun getAllArtists(): Flow<List<Artist>>

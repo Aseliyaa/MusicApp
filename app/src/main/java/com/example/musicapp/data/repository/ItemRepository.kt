@@ -1,5 +1,6 @@
 package com.example.musicapp.data.repository
 
+import com.example.musicapp.data.model.Track
 import kotlinx.coroutines.flow.Flow
 
 interface ItemRepository<T> {
@@ -10,4 +11,5 @@ interface ItemRepository<T> {
     suspend fun updateItem(item: T)
     suspend fun deleteAll()
     suspend fun insertAll(items: List<T>)
+    fun getItemStream(id: String): Flow<T?>
 }

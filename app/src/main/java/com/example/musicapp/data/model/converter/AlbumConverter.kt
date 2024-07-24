@@ -2,9 +2,10 @@ package com.example.musicapp.data.model.converter
 
 import androidx.room.TypeConverter
 import com.example.musicapp.data.model.Album
+import com.example.musicapp.data.model.Artist
 import com.google.gson.Gson
 
-class Converters {
+class AlbumConverter {
     @TypeConverter
     fun fromAlbum(album: Album?) : String?{
         return if(album == null) null else Gson().toJson(album)

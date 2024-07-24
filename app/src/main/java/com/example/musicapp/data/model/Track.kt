@@ -1,15 +1,14 @@
 package com.example.musicapp.data.model
 
-import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverter
 import androidx.room.TypeConverters
-import com.example.musicapp.data.model.converter.Converters
+import com.example.musicapp.data.model.converter.AlbumConverter
+import com.example.musicapp.data.model.converter.ArtistConverter
 import com.google.gson.annotations.SerializedName
 
 @Entity(tableName = "tracks")
-@TypeConverters(Converters::class)
+@TypeConverters(AlbumConverter::class, ArtistConverter::class)
 data class Track(
     @PrimaryKey
     @SerializedName("id") var id: String,
@@ -25,7 +24,8 @@ data class Track(
     @SerializedName("preview") var preview: String? = null,
     @SerializedName("md5_image") var md5Image: String? = null,
     @SerializedName("position") var position: Int? = null,
-    @SerializedName("album") var album: Album? = Album(),
+    @SerializedName("album") var album: Album?,
+    @SerializedName("artist") var artist: Artist?,
     @SerializedName("type") var type: String? = null
 )
 

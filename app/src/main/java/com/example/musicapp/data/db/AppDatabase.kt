@@ -11,10 +11,11 @@ import com.example.musicapp.data.dao.TrackDao
 import com.example.musicapp.data.model.Artist
 import com.example.musicapp.data.model.Genre
 import com.example.musicapp.data.model.Track
-import com.example.musicapp.data.model.converter.Converters
+import com.example.musicapp.data.model.converter.AlbumConverter
+import com.example.musicapp.data.model.converter.ArtistConverter
 
-@Database(entities = [Genre::class, Artist::class, Track::class], version = 6, exportSchema = false)
-@TypeConverters(Converters::class)
+@Database(entities = [Genre::class, Artist::class, Track::class], version = 9, exportSchema = false)
+@TypeConverters(AlbumConverter::class, ArtistConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun genreDao(): GenreDao
     abstract fun artistDao(): ArtistDao

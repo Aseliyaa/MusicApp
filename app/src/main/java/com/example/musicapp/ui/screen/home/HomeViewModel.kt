@@ -6,8 +6,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapp.data.model.Album
+import com.example.musicapp.data.model.Albums
+import com.example.musicapp.data.model.Artist
 import com.example.musicapp.data.model.Artists
 import com.example.musicapp.data.model.Genres
+import com.example.musicapp.data.model.Track
 import com.example.musicapp.data.model.Tracks
 import com.example.musicapp.data.repository.ArtistsRepository
 import com.example.musicapp.data.repository.GenresRepository
@@ -37,16 +41,20 @@ class HomeViewModel(
     }
 
     var genresUiState: UiState<Genres> by mutableStateOf(UiState.Loading())
-        private set
 
     var artistUiState: UiState<Artists> by mutableStateOf(UiState.Loading())
-        private set
 
     var tracksUiState: UiState<Tracks> by mutableStateOf(UiState.Loading())
-        private set
 
     var artistByGenreIdUiState: UiState<Artists> by mutableStateOf(UiState.Loading())
-        private set
+
+    var artistTracksUiState: UiState<Tracks> by mutableStateOf(UiState.Loading())
+
+    var albumsUiState: UiState<Albums> by mutableStateOf(UiState.Loading())
+
+    var albumTracksUiState: UiState<Tracks> by mutableStateOf(UiState.Loading())
+    var albumUiState: UiState<Album> by mutableStateOf(UiState.Loading())
+
 
     fun selectItem(index: Int) {
         _selectedItemIndex.value = index
@@ -56,6 +64,10 @@ class HomeViewModel(
         getGenres()
         getArtists()
         getTracks()
+    }
+
+    suspend fun getPlaylist(): List<Track> {
+        return tracksRepository.getAllItemsStream().first()
     }
 
     private fun getTracks() {
@@ -80,8 +92,8 @@ class HomeViewModel(
                 if (tracksFromApi != null) {
                     tracksRepository.deleteAll()
                     tracksRepository.insertAll(tracksFromApi)
-                    tracksUiState = UiState.Success(Tracks(tracksFromApi))
                     Log.d("TAG", tracksFromApi.toString())
+                    tracksUiState = UiState.Success(Tracks(tracksFromApi))
                 }
             } catch (e: IOException) {
                 tracksUiState = UiState.Error()
@@ -127,21 +139,26 @@ class HomeViewModel(
             if (artistsFromDb.isNotEmpty()) {
                 artistUiState = UiState.Success(Artists(artistsFromDb))
             }
-
+            val artistsFromApi = mutableSetOf<Artist>()
             try {
-                val artistsFromApi = genresFromDb.map { genre ->
+                val deferredResults = genresFromDb.map { genre ->
                     async {
                         try {
-                            DeezerApi.retrofitService.getArtists(genre.id).data
+                            val artists =
+                                DeezerApi.retrofitService.getArtists(genre.id).data?.toSet()
+                                    ?: emptySet()
+                            artistsFromApi.addAll(artists)
                         } catch (e: IOException) {
-                            emptyList()
+                            emptyList<Artist>()
                         }
                     }
-                }.awaitAll().flatten().toSet()
+                }
+
+                deferredResults.awaitAll()
 
                 artistUiState = if (artistsFromApi.isNotEmpty()) {
                     artistsRepository.deleteAll()
-                    artistsRepository.insertAll(artistsFromApi.toList())
+                    artistsRepository.insertAll(artistsFromApi.toSet().toList())
 
                     UiState.Success(Artists(artistsRepository.getAllItemsStream().first()))
                 } else {
@@ -154,42 +171,71 @@ class HomeViewModel(
         }
     }
 
-    fun getArtistByGenreId(genreIdStr: String?) {
+    fun getArtistByGenreId(genreId: String) {
         viewModelScope.launch {
-            val genreId = genreIdStr?.toInt()
-            if (genreId != null) {
-                artistByGenreIdUiState = try {
-                    val artistsByGenreId = DeezerApi.retrofitService.getArtists(genreId)
-                    UiState.Success(artistsByGenreId)
-                } catch (e: IOException) {
-                    UiState.Error()
-                }
+            artistByGenreIdUiState = try {
+                val artistsByGenreId = DeezerApi.retrofitService.getArtists(genreId)
+                UiState.Success(artistsByGenreId)
+            } catch (e: IOException) {
+                UiState.Error()
             }
         }
     }
-//    fun getArtistByGenreId(genreIdStr: String?) {
-//        viewModelScope.launch {
-//            val genreId = genreIdStr?.toInt()
-//            try {
-//                artistByGenreIdUiState = if (genreId != null) {
-//                    val artistsByGenreIdDeferred = async {
-//                        try {
-//                            DeezerApi.retrofitService.getArtists(genreId).data
-//                        } catch (e: IOException) {
-//                            emptyList()
-//                        }
-//                    }
-//                    val artistsByGenreId = artistsByGenreIdDeferred.await()
-//                    UiState.Success(Artists(artistsByGenreId))
-//
-//                } else {
-//                    UiState.Error()
-//                }
-//            } catch (e: Exception) {
-//                artistByGenreIdUiState = UiState.Error()
-//            }
-//        }
-//    }
+
+    fun getArtistTracks(artistId: String) {
+        viewModelScope.launch {
+            artistTracksUiState = try {
+                val artistTracks = DeezerApi.retrofitService.getArtistTracks(artistId)
+                UiState.Success(artistTracks)
+            } catch (e: IOException) {
+                UiState.Error()
+            }
+        }
+    }
+
+    fun getAlbumsByArtistId(artistId: String) {
+        viewModelScope.launch {
+            albumsUiState = try {
+                val albumsDeferred =
+                    async {
+                        DeezerApi.retrofitService.getArtistAlbums(artistId)
+                    }
+
+                val albums = albumsDeferred.await()
+                UiState.Success(albums)
+            } catch (e: IOException) {
+                UiState.Error()
+            }
+        }
+    }
+
+    fun getAlbumTracks(albumId: String) {
+        viewModelScope.launch {
+            albumTracksUiState = try {
+                val tracksDeferred = async {
+                    DeezerApi.retrofitService.getTracksByAlbumId(albumId)
+                }
+                val tracks = tracksDeferred.await()
+                UiState.Success(tracks)
+            } catch (e: IOException) {
+                UiState.Error()
+            }
+        }
+    }
+
+    fun getAlbumById(albumId: String) {
+        viewModelScope.launch {
+            albumUiState = try {
+                val albumDeferred = async {
+                    DeezerApi.retrofitService.getAlbumById(albumId)
+                }
+                val album = albumDeferred.await()
+                UiState.Success(album)
+            } catch (e: IOException) {
+                UiState.Error()
+            }
+        }
+    }
 }
 
 

@@ -23,6 +23,7 @@ fun CommonScreenComponents(
     navHostController: NavHostController, content: @Composable () -> Unit,
 ) {
     Scaffold(
+        containerColor = Color.White,
         modifier = Modifier.background(Color.White),
         topBar = {
             Column(

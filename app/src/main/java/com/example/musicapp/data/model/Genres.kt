@@ -6,5 +6,5 @@ import com.google.gson.annotations.SerializedName
 
 data class Genres(
     @SerializedName("data")
-    val data: List<Genre>
+    val data: List<Genre>?
 )
