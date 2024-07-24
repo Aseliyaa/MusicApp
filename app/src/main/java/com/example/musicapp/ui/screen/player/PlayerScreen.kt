@@ -1,7 +1,5 @@
 package com.example.musicapp.ui.screen.player
 
-import android.media.AudioAttributes
-import android.media.MediaPlayer
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -30,9 +28,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableLongState
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +49,6 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.musicapp.R
 import com.example.musicapp.data.model.Track
-import com.example.musicapp.ui.screen.home.HomeViewModel
 import com.example.musicapp.ui.viewmodel.AppViewModelProvider
 import kotlinx.coroutines.delay
 
@@ -61,25 +57,13 @@ import kotlinx.coroutines.delay
 fun PlayerScreen(
     navHostController: NavHostController,
     trackId: String,
-    playerViewModel: PlayerViewModel = viewModel(factory = AppViewModelProvider.Factory),
-    homeViewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    playerViewModel: PlayerViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    val mediaPlayer = playerViewModel.mediaPlayer
 
-    val mediaPlayer = remember {
-        MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .build()
-            )
-        }
-    }
-
-    val playlist = remember { mutableStateOf<List<Track>?>(null) }
-    val track = remember { mutableStateOf<Track?>(null) }
-    val isPrepared = remember { mutableStateOf(false) }
-    val isPlaying = remember { mutableStateOf(mediaPlayer.isPlaying) }
+    val playlist = playerViewModel.playlist.collectAsState()
+    val track = playerViewModel.track.collectAsState()
+    val isPlaying = playerViewModel.isPlaying.collectAsState()
 
     val currentPosition = remember { mutableLongStateOf(0) }
     val sliderPosition = remember { mutableLongStateOf(0) }
@@ -92,6 +76,13 @@ fun PlayerScreen(
 
     LaunchedEffect(currentPosition.longValue) {
         sliderPosition.longValue = currentPosition.longValue
+        if (currentPosition.longValue / 1000 == totalDuration.longValue / 1000) {
+            val currentTrackIndex = playlist.value?.indexOf(track.value)
+            val nextTrackIndex = if (currentTrackIndex != playlist.value?.lastIndex)
+                currentTrackIndex?.plus(1) else 0
+            playerViewModel.track.value =
+                nextTrackIndex?.let { playlist.value?.get(it) }
+        }
     }
 
     LaunchedEffect(mediaPlayer.duration) {
@@ -100,32 +91,11 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(Unit) {
-        val fetchedPlaylist = homeViewModel.getPlaylist()
-        playlist.value = fetchedPlaylist
-
-        for (trackIndex in fetchedPlaylist.indices) {
-            if (fetchedPlaylist[trackIndex].id == trackId) {
-                track.value = fetchedPlaylist[trackIndex]
-                break
-            }
-        }
+        playerViewModel.loadPlaylistAndTrack(trackId)
     }
 
     LaunchedEffect(track.value) {
-        track.value?.let {
-            try {
-                mediaPlayer.reset()
-                mediaPlayer.setDataSource(it.preview)
-                mediaPlayer.prepareAsync()
-                mediaPlayer.setOnPreparedListener {
-                    isPrepared.value = true
-                    if (isPlaying.value)
-                        mediaPlayer.start()
-                }
-            } catch (e: Exception) {
-                Log.e("MediaPlayer", "Error setting data source or preparing", e)
-            }
-        }
+        playerViewModel.prepareTrack()
     }
 
     DisposableEffect(Unit) {
@@ -133,6 +103,8 @@ fun PlayerScreen(
             mediaPlayer.release()
         }
     }
+
+
 
     Column {
         TopScreenRow(navHostController)
@@ -142,17 +114,19 @@ fun PlayerScreen(
         CustomSlider(
             currentPosition,
             sliderPosition,
-            totalDuration,
-            mediaPlayer
-        )
+            totalDuration
+        ) {
+            currentPosition.longValue = sliderPosition.longValue
+            playerViewModel.seekTo(sliderPosition.longValue.toInt())
+        }
         Spacer(modifier = Modifier.size(20.dp))
         ControlButtons(
             track,
             playlist.value,
-            mediaPlayer,
-            isPrepared,
-            isPlaying
-        )
+            isPlaying,
+            playerViewModel,
+
+            )
     }
 }
 
@@ -161,9 +135,8 @@ fun CustomSlider(
     currentPosition: MutableLongState,
     sliderPosition: MutableLongState,
     totalDuration: MutableLongState,
-    mediaPlayer: MediaPlayer
+    onValueChangeFinished: () -> Unit
 ) {
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -172,10 +145,7 @@ fun CustomSlider(
         Slider(
             value = sliderPosition.longValue.toFloat(),
             onValueChange = { sliderPosition.longValue = it.toLong() },
-            onValueChangeFinished = {
-                currentPosition.longValue = sliderPosition.longValue
-                mediaPlayer.seekTo(sliderPosition.longValue.toInt())
-            },
+            onValueChangeFinished = { onValueChangeFinished() },
             valueRange = 0f..totalDuration.longValue.toFloat(),
             colors = SliderDefaults.colors(
                 thumbColor = Color.Black,
@@ -240,15 +210,12 @@ fun ControlButton(icon: Int, size: Dp, onClick: () -> Unit) {
 
 @Composable
 fun ControlButtons(
-    track: MutableState<Track?>,
+    track: State<Track?>,
     playlist: List<Track>?,
-    player: MediaPlayer,
-    isPrepared: MutableState<Boolean>,
-    isPlaying: MutableState<Boolean>
+    isPlaying: State<Boolean>,
+    playerViewModel: PlayerViewModel
 ) {
-    val index = remember {
-        mutableStateOf(playlist?.indexOf(track.value))
-    }
+    val currentIndex = playlist?.indexOf(track.value)
 
     Row(
         horizontalArrangement = Arrangement.Center,
@@ -257,9 +224,8 @@ fun ControlButtons(
     ) {
         ControlButton(icon = R.drawable.ic_previous, size = 40.dp) {
             if (playlist != null) {
-                index.value = playlist.indexOf(track.value)
-                index.value = if (index.value == 0) playlist.lastIndex else index.value!! - 1
-                track.value = playlist[index.value!!]
+                val newIndex = if (currentIndex == 0) playlist.lastIndex else currentIndex?.minus(1)
+                playerViewModel.track.value = playlist[newIndex!!]
             }
         }
 
@@ -268,23 +234,13 @@ fun ControlButtons(
             icon = if (isPlaying.value) R.drawable.ic_pause else R.drawable.ic_play,
             size = 100.dp
         ) {
-            if (isPrepared.value) {
-                if (player.isPlaying) {
-                    player.pause()
-                } else {
-                    player.start()
-                }
-                isPlaying.value = !isPlaying.value
-            } else {
-                Log.e("MediaPlayer", "MediaPlayer is not prepared")
-            }
+            playerViewModel.playOrPause()
         }
         Spacer(modifier = Modifier.width(20.dp))
         ControlButton(icon = R.drawable.ic_next, size = 40.dp) {
             if (playlist != null) {
-                index.value = playlist.indexOf(track.value)
-                index.value = if (index.value == playlist.lastIndex) 0 else index.value!! + 1
-                track.value = playlist[index.value!!]
+                val newIndex = if (currentIndex == playlist.lastIndex) 0 else currentIndex?.plus(1)
+                playerViewModel.track.value = playlist[newIndex!!]
             }
         }
     }
