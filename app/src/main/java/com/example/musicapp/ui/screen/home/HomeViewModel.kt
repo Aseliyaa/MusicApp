@@ -236,6 +236,10 @@ class HomeViewModel(
             }
         }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+    }
 }
 
 

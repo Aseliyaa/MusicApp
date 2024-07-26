@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.screen.player
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -59,7 +61,8 @@ fun PlayerScreen(
     trackId: String,
     playerViewModel: PlayerViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val mediaPlayer = playerViewModel.mediaPlayer
+    val context = LocalContext.current
+    val mediaPlayer = playerViewModel.mediaPlayer.collectAsState().value
 
     val playlist = playerViewModel.playlist.collectAsState()
     val track = playerViewModel.track.collectAsState()
@@ -69,9 +72,15 @@ fun PlayerScreen(
     val sliderPosition = remember { mutableLongStateOf(0) }
     val totalDuration = remember { mutableLongStateOf(0) }
 
-    LaunchedEffect(mediaPlayer.currentPosition, isPlaying.value) {
+    LaunchedEffect(Unit) {
+        playerViewModel.bindService(context)
+        playerViewModel.loadPlaylistAndTrack(trackId)
+        playerViewModel.prepareTrack(context)
+    }
+
+    LaunchedEffect(mediaPlayer?.currentPosition, isPlaying.value) {
         delay(1000)
-        currentPosition.longValue = mediaPlayer.currentPosition.toLong()
+        currentPosition.longValue = mediaPlayer?.currentPosition?.toLong() ?: 0
     }
 
     LaunchedEffect(currentPosition.longValue) {
@@ -85,26 +94,20 @@ fun PlayerScreen(
         }
     }
 
-    LaunchedEffect(mediaPlayer.duration) {
-        if (mediaPlayer.duration > 0)
-            totalDuration.longValue = mediaPlayer.duration.toLong()
-    }
-
-    LaunchedEffect(Unit) {
-        playerViewModel.loadPlaylistAndTrack(trackId)
+    LaunchedEffect(mediaPlayer?.duration) {
+        if ((mediaPlayer?.duration ?: 0) > 0)
+            totalDuration.longValue = mediaPlayer?.duration?.toLong() ?: 0
     }
 
     LaunchedEffect(track.value) {
-        playerViewModel.prepareTrack()
+        playerViewModel.prepareTrack(context)
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            mediaPlayer.release()
+            playerViewModel.unBindService(context)
         }
     }
-
-
 
     Column {
         TopScreenRow(navHostController)
@@ -117,7 +120,7 @@ fun PlayerScreen(
             totalDuration
         ) {
             currentPosition.longValue = sliderPosition.longValue
-            playerViewModel.seekTo(sliderPosition.longValue.toInt())
+            playerViewModel.seekTo(context, sliderPosition.longValue.toInt())
         }
         Spacer(modifier = Modifier.size(20.dp))
         ControlButtons(
@@ -125,8 +128,8 @@ fun PlayerScreen(
             playlist.value,
             isPlaying,
             playerViewModel,
-
-            )
+            context
+        )
     }
 }
 
@@ -213,7 +216,8 @@ fun ControlButtons(
     track: State<Track?>,
     playlist: List<Track>?,
     isPlaying: State<Boolean>,
-    playerViewModel: PlayerViewModel
+    playerViewModel: PlayerViewModel,
+    context: Context
 ) {
     val currentIndex = playlist?.indexOf(track.value)
 
@@ -234,7 +238,7 @@ fun ControlButtons(
             icon = if (isPlaying.value) R.drawable.ic_pause else R.drawable.ic_play,
             size = 100.dp
         ) {
-            playerViewModel.playOrPause()
+            playerViewModel.playOrPause(context)
         }
         Spacer(modifier = Modifier.width(20.dp))
         ControlButton(icon = R.drawable.ic_next, size = 40.dp) {
