@@ -102,4 +102,6 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
+    implementation("androidx.core:core:1.8.0")
+    implementation("androidx.media:media:1.6.0")
 }

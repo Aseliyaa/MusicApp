@@ -12,4 +12,5 @@
     <color name="light_grey">#EBE4FF</color>
     <color name="word_grey">#808080</color>
     <color name="yellow">#F4E6D1</color>
+    <color name="notification_color">#5E0C73</color>
 </resources>
