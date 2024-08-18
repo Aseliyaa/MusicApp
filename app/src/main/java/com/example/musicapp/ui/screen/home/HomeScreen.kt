@@ -51,7 +51,7 @@ fun <T> ContentGrid(
     list: List<T>,
     navigateTo: (String) -> Unit,
     itemContent: @Composable (T, Modifier, (String) -> Unit) -> Unit
-){
+) {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -110,11 +110,14 @@ fun GridItem(
 
 @Composable
 fun LoadingScreen(modifier: Modifier = Modifier) {
-    Image(
-        modifier = modifier.size(200.dp),
-        painter = painterResource(R.drawable.profile),
-        contentDescription = stringResource(R.string.loading)
-    )
+    Box(modifier = modifier.size(80.dp),
+        contentAlignment = Alignment.Center
+        ) {
+        Image(
+            painter = painterResource(R.drawable.loading),
+            contentDescription = stringResource(R.string.loading)
+        )
+    }
 }
 
 @Composable
@@ -124,9 +127,11 @@ fun ErrorScreen(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-//        Image(
-//            painter = painterResource(id = R.drawable.ic_connection_error), contentDescription = ""
-//        )
+        Image(
+            modifier = modifier.size(80.dp),
+            painter = painterResource(id = R.drawable.error),
+            contentDescription = stringResource(R.string.loading_failed)
+        )
         Text(text = stringResource(R.string.loading_failed), modifier = Modifier.padding(16.dp))
     }
 }
@@ -167,7 +172,7 @@ fun HomeMenuRow(
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
 
-    val commonListItems = listOf("Genres", "Artists", "Songs", "Favorites")
+    val commonListItems = listOf("Genres", "Artists", "Songs")
     val color = colorResource(id = R.color.word_grey)
 
     LazyRow(
@@ -227,60 +232,5 @@ fun TextItem(isSelected: Boolean, item: String, itemIndex: Int, onItemClick: (In
         color = color,
     )
 }
-
-@Composable
-fun ProfileAndSearchRow() {
-    Row(
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-
-    ) {
-        ProfileBox()
-        SearchBox()
-    }
-}
-
-@Composable
-fun SearchBox() {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(50.dp)
-            .background(
-                color = colorResource(id = R.color.light_grey),
-                shape = CircleShape
-            ),
-    ) {
-        Image(
-            imageVector = Icons.Default.Search,
-            contentDescription = "search",
-            modifier = Modifier.size(35.dp)
-        )
-    }
-}
-
-@Composable
-fun ProfileBox() {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(50.dp)
-            .background(
-                color = colorResource(id = R.color.yellow),
-                shape = CircleShape
-            ),
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.profile),
-            contentDescription = "profile",
-            modifier = Modifier.size(35.dp)
-        )
-    }
-}
-
-
 
 

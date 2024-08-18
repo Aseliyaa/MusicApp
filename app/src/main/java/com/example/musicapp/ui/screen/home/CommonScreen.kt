@@ -13,9 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.musicapp.ui.screen.home.HeaderRow
-import com.example.musicapp.ui.screen.home.HomeMenuRow
-import com.example.musicapp.ui.screen.home.ProfileAndSearchRow
+
 
 @Composable
 fun CommonScreenComponents(
@@ -31,7 +29,6 @@ fun CommonScreenComponents(
                     .padding(20.dp)
 
             ) {
-                ProfileAndSearchRow()
                 Spacer(modifier = Modifier.height(12.dp))
                 HomeMenuRow(selectedItemIndex, navHostController)
                 Spacer(modifier = Modifier.height(20.dp))

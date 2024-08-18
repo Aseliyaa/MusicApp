@@ -105,10 +105,12 @@ class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewMod
         }
     }
 
+    @OptIn(UnstableApi::class)
     suspend fun loadPlaylistAndTrack(trackId: String) {
         val fetchedPlaylist = tracksRepository?.getAllItemsStream()?.first()
         _playlist.value = fetchedPlaylist
 
+        Log.d("TRACK FROM DB", fetchedPlaylist?.get(0)?.title.toString())
         val fetchedTrack = fetchedPlaylist?.find { it.id == trackId }
         fetchedTrack?.let {
             _track.value = it
@@ -163,14 +165,4 @@ class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewMod
         context.startService(intent)
     }
 
-
-    override fun onCleared() {
-        super.onCleared()
-        if (_context != null) {
-            val intent = Intent(_context, MusicService::class.java).apply {
-                action = MusicService.Action.STOP.toString()
-            }
-            _context!!.startService(intent)
-        }
-    }
 }

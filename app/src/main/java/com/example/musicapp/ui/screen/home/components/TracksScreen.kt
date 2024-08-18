@@ -61,6 +61,9 @@ fun TracksScreen(
     navHostController: NavHostController,
     viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    LaunchedEffect(Unit){
+        viewModel.getTracks()
+    }
     when (val tracksUiState = viewModel.tracksUiState) {
         is HomeViewModel.UiState.Success ->
             tracksUiState.data.data?.let {

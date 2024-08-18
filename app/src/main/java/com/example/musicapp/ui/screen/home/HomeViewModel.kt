@@ -63,22 +63,11 @@ class HomeViewModel(
     init {
         getGenres()
         getArtists()
-        getTracks()
     }
 
-    suspend fun getPlaylist(): List<Track> {
-        return tracksRepository.getAllItemsStream().first()
-    }
-
-    private fun getTracks() {
+     fun getTracks() {
         viewModelScope.launch {
-            val tracksFromDbDeferred = async { tracksRepository.getAllItemsStream().first() }
-            val tracksFromDb = tracksFromDbDeferred.await()
-
-            if (tracksFromDb.isNotEmpty()) {
-                tracksUiState = UiState.Success(Tracks(tracksFromDb))
-            }
-
+            tracksRepository.deleteAll()
             try {
                 val tracksFromApiDeferred = async {
                     try {
@@ -92,7 +81,6 @@ class HomeViewModel(
                 if (tracksFromApi != null) {
                     tracksRepository.deleteAll()
                     tracksRepository.insertAll(tracksFromApi)
-                    Log.d("TAG", tracksFromApi.toString())
                     tracksUiState = UiState.Success(Tracks(tracksFromApi))
                 }
             } catch (e: IOException) {
@@ -184,11 +172,22 @@ class HomeViewModel(
 
     fun getArtistTracks(artistId: String) {
         viewModelScope.launch {
-            artistTracksUiState = try {
-                val artistTracks = DeezerApi.retrofitService.getArtistTracks(artistId)
-                UiState.Success(artistTracks)
+            try {
+                val tracksFromApiDeferred = async {
+                    try {
+                        DeezerApi.retrofitService.getArtistTracks(artistId).data
+                    } catch (e: IOException) {
+                        null
+                    }
+                }
+                val tracksFromApi = tracksFromApiDeferred.await()
+                if (tracksFromApi != null) {
+                    tracksRepository.deleteAll()
+                    tracksRepository.insertAll(tracksFromApi)
+                    artistTracksUiState = UiState.Success(Tracks(tracksFromApi))
+                }
             } catch (e: IOException) {
-                UiState.Error()
+                artistTracksUiState = UiState.Error()
             }
         }
     }
@@ -215,7 +214,18 @@ class HomeViewModel(
                 val tracksDeferred = async {
                     DeezerApi.retrofitService.getTracksByAlbumId(albumId)
                 }
+                val albumDeferred = async {
+                    DeezerApi.retrofitService.getAlbumById(albumId)
+                }
                 val tracks = tracksDeferred.await()
+                val album = albumDeferred.await()
+                tracks.data?.forEach {
+                    it.album = album
+                }
+                tracks.data?.let {
+                    tracksRepository.deleteAll()
+                    tracksRepository.insertAll(it)
+                }
                 UiState.Success(tracks)
             } catch (e: IOException) {
                 UiState.Error()

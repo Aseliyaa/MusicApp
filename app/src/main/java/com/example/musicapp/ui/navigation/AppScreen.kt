@@ -1,5 +1,7 @@
 package com.example.musicapp.ui.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,6 +30,7 @@ enum class AppScreen {
     HOME,
 }
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun ScreenNavigation(
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
