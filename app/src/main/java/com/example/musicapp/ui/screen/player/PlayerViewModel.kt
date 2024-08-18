@@ -11,6 +11,8 @@ import android.media.MediaPlayer
 import android.os.Build
 import android.os.IBinder
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
@@ -52,10 +54,13 @@ class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewMod
                 CreateNotification.Action.PREVIOUS.toString() -> onTrackPrevious(context)
                 CreateNotification.Action.PLAY_OR_PAUSE.toString() -> playOrPause(context)
                 CreateNotification.Action.NEXT.toString() -> onTrackNext(context)
+                CreateNotification.Action.NOTIFICATION_DELETE.toString() -> stop(context)
             }
         }
     }
 
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     fun bindService(context: Context) {
         _context = context
@@ -71,21 +76,30 @@ class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewMod
                 mBound = false
                 _mediaPlayer.value = null
             }
-
         }
         serviceConnection = connection
+
         Intent(context, MusicService::class.java).also { intent ->
             context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.registerReceiver(broadcastReceiver, IntentFilter(CreateNotification.ACTION))
+            context.startForegroundService(Intent(context, MusicService::class.java))
+
+            context.registerReceiver(
+                broadcastReceiver,
+                IntentFilter(CreateNotification.ACTION),
+                Context.RECEIVER_EXPORTED
+            )
+        } else {
             context.startService(Intent(context, MusicService::class.java))
+            context.registerReceiver(broadcastReceiver, IntentFilter(CreateNotification.ACTION))
         }
     }
 
-
     fun unBindService(context: Context) {
         serviceConnection?.let {
+            context.unregisterReceiver(broadcastReceiver)
             context.unbindService(it)
             serviceConnection = null
         }
@@ -134,8 +148,6 @@ class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewMod
 
     @OptIn(UnstableApi::class)
     fun playOrPause(context: Context) {
-        Log.d("PLAYER_VAL", _isPlaying.value.toString())
-        Log.d("PLAYER", _mediaPlayer.value?.isPlaying.toString())
         val intent = Intent(context, MusicService::class.java).apply {
             action =
                 if (_isPlaying.value) MusicService.Action.PAUSE.toString() else MusicService.Action.PLAY.toString()
@@ -143,6 +155,14 @@ class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewMod
         context.startService(intent)
         _isPlaying.value = !_isPlaying.value
     }
+
+    private fun stop(context: Context) {
+        val intent = Intent(context, MusicService::class.java).apply {
+            action = MusicService.Action.STOP.toString()
+        }
+        context.startService(intent)
+    }
+
 
     override fun onCleared() {
         super.onCleared()

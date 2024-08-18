@@ -120,7 +120,6 @@ fun TrackItem(track: Track, onItemClick: (String) -> Unit, modifier: Modifier) {
             .clickable { onItemClick(track.id) }
             .background(Color.Transparent)
             .wrapContentHeight()
-            .blur(20.dp)
             .border(1.dp, Color.Black, RoundedCornerShape(20.dp))
     ) {
         Row(

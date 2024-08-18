@@ -1,23 +1,26 @@
 package com.example.musicapp.service
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
+import android.content.pm.PackageManager
 import android.os.Build
 import android.support.v4.media.session.MediaSessionCompat
-import android.widget.RemoteViews
-import androidx.compose.ui.graphics.Color
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.example.musicapp.MainActivity
 import com.example.musicapp.R
 import kotlinx.coroutines.flow.MutableStateFlow
 
 
 class CreateNotification {
     enum class Action {
-        PLAY_OR_PAUSE, PREVIOUS, NEXT
+        PLAY_OR_PAUSE, PREVIOUS, NEXT, NOTIFICATION_DELETE
     }
 
     companion object {
@@ -76,6 +79,15 @@ class CreateNotification {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
 
+                val intendDelete = Intent(context, NotificationReceiver::class.java).apply {
+                    action = Action.NOTIFICATION_DELETE.toString()
+                }
+                val pendingIntentDelete = PendingIntent.getBroadcast(
+                    context,
+                    0,
+                    intendDelete,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
                 val mediaSessionCompat = MediaSessionCompat(context, "tag")
                 notification = NotificationCompat.Builder(context, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_music_note)
@@ -83,11 +95,17 @@ class CreateNotification {
                     .setContentTitle(track.value)
                     .setContentText(artist.value)
                     .setOngoing(true)
-                    .setShowWhen(false)
+                    .setContentIntent(
+                        PendingIntent.getActivity(
+                            context, 0, Intent(context, MainActivity::class.java),
+                            PendingIntent.FLAG_IMMUTABLE
+                        )
+                    )
+                    .setDeleteIntent(pendingIntentDelete)
                     .addAction(drw_previous, "Previous", pendingIntentPrevious)
                     .addAction(intentPlayDrw, "Play", pendingIntentPlay)
                     .addAction(drw_next, "Next", pendingIntentNext)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setStyle(
                         androidx.media.app.NotificationCompat.MediaStyle()
                             .setShowActionsInCompactView(0, 1, 2)

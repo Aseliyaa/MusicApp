@@ -1,7 +1,9 @@
 package com.example.musicapp.ui.screen.player
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,6 +57,7 @@ import com.example.musicapp.ui.viewmodel.AppViewModelProvider
 import kotlinx.coroutines.delay
 
 
+@RequiresApi(value = 33)
 @Composable
 fun PlayerScreen(
     navHostController: NavHostController,

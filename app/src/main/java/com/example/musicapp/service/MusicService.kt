@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Binder
@@ -13,6 +14,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import com.example.musicapp.R
+import java.io.IOException
 
 
 class MusicService : Service() {
@@ -68,8 +70,7 @@ class MusicService : Service() {
                 intent.getStringExtra(EXTRA_TRACK_URL),
                 intent.getBooleanExtra(EXTRA_IS_PLAYING, false),
                 intent.getStringExtra(EXTRA_TRACK_NAME),
-                intent.getStringExtra(EXTRA_ARTIST_NAME),
-                intent.getStringExtra(EXTRA_TRACK_IMAGE)
+                intent.getStringExtra(EXTRA_ARTIST_NAME)
             )
         }
         return START_NOT_STICKY
@@ -81,8 +82,10 @@ class MusicService : Service() {
                 this, null, null,
                 R.drawable.ic_pause_black_24dp
             )
-            startForeground(1, CreateNotification.notification)
+            startForegroundServiceWithNotification()
             player.start()
+        } else {
+            Log.e("MusicService", "Player is not prepared yet.")
         }
     }
 
@@ -90,37 +93,43 @@ class MusicService : Service() {
         trackUrl: String?,
         isPlaying: Boolean,
         trackName: String?,
-        artistName: String?,
-        imageUri: String?
+        artistName: String?
     ) {
+        if (trackUrl == null) {
+            Log.e("MusicService", "Track URL is null, cannot prepare the player.")
+            return
+        }
         try {
-            trackUrl?.let {
-                if (trackName != null && artistName != null) {
-                    CreateNotification.createNotification(
-                        this, trackName, artistName,
-                        if (isPlaying) R.drawable.ic_pause_black_24dp else R.drawable.ic_play_arrow_black_24dp
-                    )
-                    startForeground(1, CreateNotification.notification)
-                }
-                player.reset()
-                player.setDataSource(it)
-                player.prepareAsync()
-                player.setOnPreparedListener {
-                    isPrepared.value = true
-                    if (isPlaying) {
-                        player.start()
-                    }
-
+            Log.d("MusicService", "Preparing player with URL: $trackUrl")
+            player.reset()
+            player.setDataSource(trackUrl)
+            player.prepareAsync()
+            player.setOnPreparedListener {
+                isPrepared.value = true
+                Log.d("MusicService", "Player prepared successfully.")
+                if (isPlaying) {
+                    player.start()
+                    Log.d("MusicService", "Player started playing.")
                 }
             }
-        } catch (e: Exception) {
+            if (trackName != null && artistName != null) {
+                CreateNotification.createNotification(
+                    this, trackName, artistName,
+                    if (isPlaying) R.drawable.ic_pause_black_24dp else R.drawable.ic_play_arrow_black_24dp
+                )
+                startForegroundServiceWithNotification()
+            }
+        } catch (e: IOException) {
             Log.e("MediaPlayer", "Error setting data source or preparing", e)
         }
     }
 
-
     private fun seekTo(position: Int) {
-        player.seekTo(position)
+        if (isPrepared.value) {
+            player.seekTo(position)
+        } else {
+            Log.e("MusicService", "Player is not prepared, cannot seek.")
+        }
     }
 
     private fun pause() {
@@ -129,20 +138,35 @@ class MusicService : Service() {
                 this, null, null,
                 R.drawable.ic_play_arrow_black_24dp
             )
-            startForeground(1, CreateNotification.notification)
+            startForegroundServiceWithNotification()
             player.pause()
         }
     }
 
     private fun stop() {
-        player.stop()
-        stopSelf()
+        if (isPrepared.value) {
+            player.stop()
+            stopForeground(true)
+            stopSelf()
+        }
     }
 
     override fun onDestroy() {
         stop()
         player.release()
         super.onDestroy()
+    }
+
+    private fun startForegroundServiceWithNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CreateNotification.notification?.let {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    startForeground(1, it, FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+                } else {
+                    startForeground(1, it)
+                }
+            }
+        }
     }
 
     fun getPlayer(): MediaPlayer {
