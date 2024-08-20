@@ -12,7 +12,6 @@ class WelcomeViewModel : ViewModel() {
     var _currentPage = MutableStateFlow(0)
     private val currentPage: StateFlow<Int> = _currentPage
 
-
     suspend fun scrollNext(pagerState: PagerState, pageCount: Int, navHostController: NavHostController) {
         if (currentPage.value != pageCount - 1) {
             pagerState.animateScrollToPage(_currentPage.value + 1)

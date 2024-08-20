@@ -12,9 +12,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import com.example.musicapp.data.model.Track
 import com.example.musicapp.data.repository.FavoritesRepository
@@ -176,5 +174,4 @@ class PlayerViewModel(
         }
         context.startService(intent)
     }
-
 }

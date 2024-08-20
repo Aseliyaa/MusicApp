@@ -1,9 +1,6 @@
 package com.example.musicapp.ui.screen.player
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -54,7 +51,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.musicapp.R
-import com.example.musicapp.data.model.Favorites
 import com.example.musicapp.data.model.Track
 import com.example.musicapp.ui.screen.favorites.FavoritesViewModel
 import com.example.musicapp.ui.viewmodel.AppViewModelProvider
@@ -219,7 +215,6 @@ fun ControlButton(icon: Int, size: Dp, onClick: () -> Unit) {
     }
 }
 
-
 @Composable
 fun ControlButtons(
     track: State<Track?>,
@@ -259,7 +254,7 @@ fun ControlButtons(
     }
 }
 
-@SuppressLint("LongLogTag")
+
 @Composable
 fun TrackInfoColumn(
     track: Track,
@@ -268,7 +263,7 @@ fun TrackInfoColumn(
     )
 ) {
     val isClicked = remember { mutableStateOf(track.isClicked) }
-    Log.d("isClicked Compose", isClicked.value.toString())
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(horizontal = 20.dp)
