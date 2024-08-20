@@ -6,11 +6,11 @@ import com.example.musicapp.data.repository.TracksRepository
 import kotlinx.coroutines.flow.Flow
 
 class TracksRepositoryImpl(private val trackDao: TrackDao) : TracksRepository {
-    override fun getAllItemsStream(): Flow<List<Track>> {
+    override suspend fun getAllItemsStream(): Flow<List<Track>> {
         return trackDao.getAllTracks()
     }
 
-    override fun getItemStream(id: String): Flow<Track?> {
+    override suspend fun getItemStream(id: String): Flow<Track?> {
         return trackDao.getTrack(id)
     }
 

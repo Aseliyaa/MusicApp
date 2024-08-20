@@ -5,6 +5,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.musicapp.MusicApplication
+import com.example.musicapp.ui.screen.favorites.FavoritesViewModel
 import com.example.musicapp.ui.screen.home.HomeViewModel
 import com.example.musicapp.ui.screen.player.PlayerViewModel
 import com.example.musicapp.ui.screen.welcome.WelcomeViewModel
@@ -23,6 +24,13 @@ object AppViewModelProvider {
         }
         initializer {
             PlayerViewModel(
+                musicApplication().container.tracksRepository,
+                musicApplication().container.favoritesRepository
+            )
+        }
+        initializer {
+            FavoritesViewModel(
+                musicApplication().container.favoritesRepository,
                 musicApplication().container.tracksRepository
             )
         }

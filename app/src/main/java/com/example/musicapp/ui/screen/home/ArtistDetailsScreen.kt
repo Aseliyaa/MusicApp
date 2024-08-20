@@ -1,6 +1,7 @@
 package com.example.musicapp.ui.screen.home
 
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 
@@ -45,7 +46,7 @@ fun ArtistDetailsScreen(
         tracks = emptyList()
     }
 
-    LazyColumn() {
+    LazyColumn {
         item { LazyColumnText("Albums") }
         item { AlbumsContent(navHostController, viewModel) }
         item { Spacer(modifier = Modifier.size(20.dp)) }
@@ -93,6 +94,7 @@ fun TracksRow(pair: List<Track>, navHostController: NavHostController) {
             TrackItem(
                 track = track, onItemClick = { trackId ->
                     navHostController.navigate("track/$trackId")
+                    Log.d("ID", trackId)
                 },
                 modifier = Modifier
                     .weight(1f)

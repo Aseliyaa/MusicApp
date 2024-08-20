@@ -1,17 +1,15 @@
 package com.example.musicapp.data.model
 
-import androidx.room.CoroutinesRoom
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.example.musicapp.data.model.converter.AlbumConverter
 import com.example.musicapp.data.model.converter.ArtistConverter
 import com.google.gson.annotations.SerializedName
 
-@Entity(tableName = "tracks")
+@Entity(tableName = "favorites")
 @TypeConverters(AlbumConverter::class, ArtistConverter::class)
-data class Track(
+data class Favorites(
     @PrimaryKey
     @SerializedName("id") var id: String,
     @SerializedName("title") var title: String? = null,
@@ -29,6 +27,5 @@ data class Track(
     @SerializedName("album") var album: Album?,
     @SerializedName("artist") var artist: Artist?,
     @SerializedName("type") var type: String? = null,
-    @SerializedName("isClicked") var isClicked: Boolean = false
+    @SerializedName("isClicked") var isClicked: Boolean = true
 )
-

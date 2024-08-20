@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModel
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import com.example.musicapp.data.model.Track
+import com.example.musicapp.data.repository.FavoritesRepository
 import com.example.musicapp.data.repository.TracksRepository
 import com.example.musicapp.service.CreateNotification
 import com.example.musicapp.service.MusicService
@@ -25,7 +26,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 
 
-class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewModel() {
+class PlayerViewModel(
+    private val tracksRepository: TracksRepository,
+    private val favoritesRepository: FavoritesRepository
+) : ViewModel() {
     @SuppressLint("StaticFieldLeak")
     private lateinit var musicService: MusicService
 
@@ -58,7 +62,6 @@ class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewMod
             }
         }
     }
-
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -107,11 +110,20 @@ class PlayerViewModel(private val tracksRepository: TracksRepository?) : ViewMod
 
     @OptIn(UnstableApi::class)
     suspend fun loadPlaylistAndTrack(trackId: String) {
-        val fetchedPlaylist = tracksRepository?.getAllItemsStream()?.first()
+        for(track in tracksRepository.getAllItemsStream().first()){
+            if(favoritesRepository.getItemStream(track.id).first() != null){
+                track.isClicked = true
+                tracksRepository.updateItem(track)
+            } else {
+                track.isClicked = false
+                tracksRepository.updateItem(track)
+            }
+        }
+
+        val fetchedPlaylist = tracksRepository.getAllItemsStream().first()
         _playlist.value = fetchedPlaylist
 
-        Log.d("TRACK FROM DB", fetchedPlaylist?.get(0)?.title.toString())
-        val fetchedTrack = fetchedPlaylist?.find { it.id == trackId }
+        val fetchedTrack = fetchedPlaylist.find { it.id == trackId }
         fetchedTrack?.let {
             _track.value = it
         }

@@ -172,7 +172,7 @@ fun HomeMenuRow(
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
 
-    val commonListItems = listOf("Genres", "Artists", "Songs")
+    val commonListItems = listOf("Genres", "Artists", "Songs", "Favorites")
     val color = colorResource(id = R.color.word_grey)
 
     LazyRow(

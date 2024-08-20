@@ -1,5 +1,6 @@
 package com.example.musicapp.ui.screen.player
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.util.Log
@@ -23,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -52,7 +54,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.musicapp.R
+import com.example.musicapp.data.model.Favorites
 import com.example.musicapp.data.model.Track
+import com.example.musicapp.ui.screen.favorites.FavoritesViewModel
 import com.example.musicapp.ui.viewmodel.AppViewModelProvider
 import kotlinx.coroutines.delay
 
@@ -115,7 +119,9 @@ fun PlayerScreen(
     Column {
         TopScreenRow(navHostController)
         Spacer(modifier = Modifier.size(20.dp))
-        TrackInfoColumn(track.value)
+        track.value?.let {
+            TrackInfoColumn(it)
+        }
         Spacer(modifier = Modifier.size(20.dp))
         CustomSlider(
             currentPosition,
@@ -253,19 +259,27 @@ fun ControlButtons(
     }
 }
 
+@SuppressLint("LongLogTag")
 @Composable
-fun TrackInfoColumn(track: Track?) {
+fun TrackInfoColumn(
+    track: Track,
+    favoritesViewModel: FavoritesViewModel = viewModel(
+        factory = AppViewModelProvider.Factory
+    )
+) {
+    val isClicked = remember { mutableStateOf(track.isClicked) }
+    Log.d("isClicked Compose", isClicked.value.toString())
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(horizontal = 20.dp)
     ) {
         AsyncImage(
-            model = track?.album?.coverMedium,
+            model = track.album?.coverMedium,
             contentDescription = "picture",
             modifier = Modifier.aspectRatio(1f)
         )
         Spacer(modifier = Modifier.size(20.dp))
-        track?.titleShort?.let {
+        track.titleShort?.let {
             Text(
                 text = it,
                 fontSize = 23.sp,
@@ -275,7 +289,7 @@ fun TrackInfoColumn(track: Track?) {
         }
         Spacer(modifier = Modifier.size(10.dp))
 
-        track?.artist?.name?.let {
+        track.artist?.name?.let {
             Text(
                 text = it,
                 fontSize = 17.sp,
@@ -284,11 +298,12 @@ fun TrackInfoColumn(track: Track?) {
             )
         }
         Spacer(modifier = Modifier.size(10.dp))
+
         Box(
             modifier = Modifier.wrapContentSize()
         ) {
             Image(
-                imageVector = Icons.Filled.AddCircle,
+                imageVector = if (isClicked.value) Icons.Filled.CheckCircle else Icons.Filled.AddCircle,
                 contentDescription = "add",
                 modifier = Modifier
                     .background(
@@ -297,11 +312,20 @@ fun TrackInfoColumn(track: Track?) {
                     )
                     .padding(5.dp)
                     .size(15.dp)
+                    .clickable {
+                        isClicked.value = !isClicked.value
+                        track.isClicked = isClicked.value
+
+                        if (isClicked.value) {
+                            favoritesViewModel.addTrack(track)
+                        } else {
+                            favoritesViewModel.deleteTrack(track)
+                        }
+                    }
             )
         }
     }
 }
-
 
 @Composable
 fun TopScreenRow(navHostController: NavHostController) {

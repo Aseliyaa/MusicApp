@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 
 
 import androidx.navigation.compose.rememberNavController
+import com.example.musicapp.ui.screen.favorites.FavoritesScreen
 import com.example.musicapp.ui.screen.home.ArtistDetailsScreen
 import com.example.musicapp.ui.screen.home.components.ArtistsByGenreScreen
 import com.example.musicapp.ui.screen.home.HomeViewModel
@@ -77,6 +78,11 @@ fun ScreenNavigation(
                         selectedItemIndex,
                         navHostController = navController
                     ) { TracksScreen(navHostController = navController) }
+                    3 -> CommonScreenComponents(
+                        selectedItemIndex, navHostController = navController
+                    ) {
+                        FavoritesScreen(navHostController = navController)
+                    }
                 }
             }
         }

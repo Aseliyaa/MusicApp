@@ -2,9 +2,7 @@ package com.example.musicapp.data.dao
 
 import androidx.room.Dao
 import androidx.room.Query
-import com.example.musicapp.data.model.Artist
 import com.example.musicapp.data.model.Track
-import com.example.musicapp.data.model.Tracks
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -65,7 +65,7 @@ class HomeViewModel(
         getArtists()
     }
 
-     fun getTracks() {
+    fun getTracks() {
         viewModelScope.launch {
             tracksRepository.deleteAll()
             try {
