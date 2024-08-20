@@ -2,13 +2,19 @@ package com.example.musicapp.ui.screen.favorites
 
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.example.musicapp.data.model.Favorites
 import com.example.musicapp.data.model.Track
+import com.example.musicapp.data.model.Tracks
 import com.example.musicapp.data.repository.FavoritesRepository
 import com.example.musicapp.data.repository.TracksRepository
+import com.example.musicapp.ui.screen.home.HomeViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -18,6 +24,8 @@ class FavoritesViewModel(
     private val favoritesRepository: FavoritesRepository,
     private val tracksRepository: TracksRepository
 ): ViewModel() {
+
+    var favoriteTracksUiState: HomeViewModel.UiState<Tracks> by mutableStateOf(HomeViewModel.UiState.Loading())
 
     private var _favoriteTracks = MutableStateFlow<List<Track>?>(null)
     var favoriteTracks: StateFlow<List<Track>?> = _favoriteTracks
@@ -41,32 +49,44 @@ class FavoritesViewModel(
     }
 
     @OptIn(UnstableApi::class)
-    private fun setFavoriteTracks(){
+    fun setFavoriteTracks(){
         viewModelScope.launch {
             _favoriteTracks.value = favoritesRepository.getAllItemsStream().first().toTracksList()
+            favoriteTracksUiState =
+                HomeViewModel.UiState.Success(Tracks(_favoriteTracks.value))
         }
     }
 
     @OptIn(UnstableApi::class)
     fun addTrack(track: Track){
         viewModelScope.launch {
-            if(!_favoriteTracks.value?.contains(track)!!) {
-                track.isClicked = true
-                favoritesRepository.insertItem(track.toFavorite())
-                _favoriteTracks.value =
-                    favoritesRepository.getAllItemsStream().first().toTracksList()
+            try {
+                if (!_favoriteTracks.value?.contains(track)!!) {
+                    track.isClicked = true
+                    favoritesRepository.insertItem(track.toFavorite())
+                    _favoriteTracks.value =
+                        favoritesRepository.getAllItemsStream().first().toTracksList()
+                    favoriteTracksUiState =
+                        HomeViewModel.UiState.Success(Tracks(_favoriteTracks.value))
+                }
+            } catch (e: Exception){
+                favoriteTracksUiState = HomeViewModel.UiState.Error()
             }
         }
-        updatePlaylist()
     }
 
     fun deleteTrack(track: Track){
         viewModelScope.launch {
-            track.isClicked = false
-            favoritesRepository.deleteItem(track.toFavorite())
-            _favoriteTracks.value = favoritesRepository.getAllItemsStream().first().toTracksList()
+            try {
+                track.isClicked = false
+                favoritesRepository.deleteItem(track.toFavorite())
+                _favoriteTracks.value =
+                    favoritesRepository.getAllItemsStream().first().toTracksList()
+                favoriteTracksUiState = HomeViewModel.UiState.Success(Tracks(_favoriteTracks.value))
+            } catch (e: Exception){
+                favoriteTracksUiState = HomeViewModel.UiState.Error()
+            }
         }
-        updatePlaylist()
     }
 
     private fun Favorites.toTrack(): Track{

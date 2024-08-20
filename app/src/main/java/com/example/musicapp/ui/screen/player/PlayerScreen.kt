@@ -340,7 +340,9 @@ fun TopScreenRow(navHostController: NavHostController) {
             contentAlignment = Alignment.CenterStart,
             modifier = Modifier
                 .weight(1f)
-                .clickable { navHostController.navigateUp() }
+                .clickable {
+                    navHostController.navigateUp()
+                }
         ) {
             Image(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
